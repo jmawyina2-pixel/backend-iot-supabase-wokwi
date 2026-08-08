@@ -1,0 +1,5 @@
+curl -X POST http://127.0.0.1:5000/mediciones ^
+  -H "Content-Type: application/json" ^
+  -d "{\"device_id\":\"sensor_001\",\"tipo_variable\":\"temperatura\",\"valor\":28.5,\"unidad\":\"C\",\"ubicacion\":\"Quevedo, Ecuador\"}"
+
+curl "http://127.0.0.1:5000/mediciones?device_id=sensor_001&limit=20"

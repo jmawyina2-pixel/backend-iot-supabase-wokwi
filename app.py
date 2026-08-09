@@ -18,7 +18,6 @@ def guardar_medicion(data):
         "Prefer": "return=representation"
     }
     r = requests.post(url, headers=headers, json=data, timeout=15)
-    r.raise_for_status()
     return r.json()
 
 @app.get("/")
@@ -38,9 +37,10 @@ def crear_medicion():
 
     try:
         data["valor"] = float(data["valor"])
+        res = guardar_medicion(data)
         return jsonify({
             "mensaje": "Medición guardada correctamente",
-            "data": guardar_medicion(data)
+            "data": res
         }), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -50,6 +50,9 @@ def consultar_mediciones():
     device_id = request.args.get("device_id")
     variable = request.args.get("tipo_variable")
     limit = request.args.get("limit", "50")
+
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        return jsonify({"error": "Variables de entorno SUPABASE_URL o SUPABASE_KEY no configuradas en Render"}), 500
 
     url = f"{SUPABASE_URL}/rest/v1/mediciones"
     params = {"select": "*", "order": "timestamp.desc", "limit": limit}
@@ -63,9 +66,12 @@ def consultar_mediciones():
         "apikey": SUPABASE_KEY,
         "Authorization": f"Bearer {SUPABASE_KEY}"
     }
-    r = requests.get(url, headers=headers, params=params, timeout=15)
-    r.raise_for_status()
-    return jsonify(r.json())
+
+    try:
+        r = requests.get(url, headers=headers, params=params, timeout=15)
+        return jsonify(r.json()), r.status_code
+    except Exception as e:
+        return jsonify({"error": "Error al conectar con Supabase", "detalle": str(e)}), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
